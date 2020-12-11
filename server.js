@@ -12,7 +12,9 @@ function questions() {
             "View roles",
             "View employees",
             "Create department",
-            "Create roles",
+            "Create role",
+            "Create employee",
+            "Update employee role",
             "Exit"
         ]
     }).then(function (answer) {
@@ -35,6 +37,14 @@ function questions() {
 
             case "Create role":
                 roleCreate();
+                break;
+                
+            case "Create employee":
+                employeeCreate();
+                break;
+
+            case "Update employee role":
+                updateEmployeeRole();
                 break;
 
             case "Exit":
@@ -117,5 +127,93 @@ async function roleCreate() {
         });
     });
 }
+
+async function employeeCreate() {
+    const roles = await DB.viewAllRoles();
+    const roleChoices = roles.map(({ id, title }) => ({
+        name: title,
+        value: id,
+    }));
+    const employees = await DB.viewAllEmployees();
+    const employeeChoices = employees.map(({ id, first_name, last_name }) => ({
+        name: first_name + " " + last_name,
+        value: id,
+    }));
+
+    employeeChoices.push({ name: "NA", value: null })
+
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                name: "first_name",
+                message: "Enter the employee's first name:",
+            },
+            {
+                type: "input",
+                name: "last_name",
+                message: "Enter the employee's last name:",
+            },
+            {
+                type: "list",
+                name: "role_id",
+                message: "Enter the employee's role:",
+                choices: roleChoices,
+            },
+            {
+                type: "list",
+                name: "manager_id",
+                message: "Enter the employee's manager, if applicable:",
+                choices: employeeChoices,
+            },
+        ])
+        .then((answer) => {
+            DB.createEmployee(
+                answer.first_name,
+                answer.last_name,
+                answer.role_id,
+                answer.manager_id
+            ).then((res) => {
+                console.log(res);
+                employeeSearch();
+            });
+        });
+}
+
+async function updateEmployeeRole() {
+    const roles = await DB.viewAllRoles();
+    const roleChoices = roles.map(({ id, title }) => ({
+        name: title,
+        value: id,
+    }));
+    const employees = await DB.viewAllEmployees();
+    const employeeChoices = employees.map(({ id, first_name, last_name }) => ({
+        name: first_name + " " + last_name,
+        value: id,
+    }));
+
+    inquirer
+        .prompt([
+            {
+                type: "list",
+                name: "employee_id",
+                message: "Enter the name of the employee you'd like to update:",
+                choices: employeeChoices,
+            },
+            {
+                type: "list",
+                name: "role_id",
+                message: "Enter the new role for this employee:",
+                choices: roleChoices,
+            },
+        ])
+        .then((answer) => {
+            DB.updateEmployeeRole(answer.role_id, answer.employee_id).then((res) => {
+                console.log(res);
+                employeeSearch();
+            });
+        });
+}
+
 
 questions();
